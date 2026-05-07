@@ -74,10 +74,10 @@ async def download_video(url: str, mode: str, task_id: str):
         if not parsed.scheme or not parsed.netloc:
             raise ValueError("Invalid URL format")
 
-        # yt-dlp options
+        # yt-dlp options with aggressive YouTube bypass
         ydl_opts = {
             'outtmpl': str(DOWNLOAD_DIR / '%(title)s.%(ext)s'),
-            'format': 'bestvideo[ext=mp4][vcodec=h264]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best',
             'merge_output_format': 'mp4',
             'noplaylist': False,
             'quiet': True,
@@ -97,13 +97,15 @@ async def download_video(url: str, mode: str, task_id: str):
             },
             'socket_timeout': 30,
             'skip_unavailable_fragments': True,
-            'fragment_retries': 10,
+            'fragment_retries': 15,
+            'retry_sleep': 5,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['web'],
-                    'player_skip': ['js', 'configs'],
+                    'player_client': ['web', 'ios'],
+                    'player_skip': ['js'],
                 }
             },
+            'http_chunk_size': 10485760,
         }
 
         if mode == "audio":

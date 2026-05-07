@@ -1,94 +1,134 @@
-# YouTube Downloader
+# YouTube Downloader - Render Deployment
 
-A beginner-friendly Python project for downloading YouTube videos or full playlists at the highest available quality using `yt-dlp`.
+A fully working YouTube downloader website hosted on Render using FastAPI, yt-dlp, and ffmpeg.
 
-## What this project does
+## Features
 
-- Downloads single YouTube videos or full playlists
-- Always uses the highest available quality
-- Uses best video and best audio, then merges into a single MP4 file
-- Saves files directly to `C:\Users\<your-username>\Youtube`
-- Creates a playlist subfolder and numbers videos in playlist order
-- Checks required packages and `ffmpeg` before running
+- Download single YouTube videos or full playlists
+- Highest available quality MP4 output
+- Audio-only mode (MP3)
+- Real-time progress tracking
+- Temporary downloadable links
+- Automatic file cleanup (1 hour)
+- Graceful error handling for invalid/private videos
+- Responsive HTML/CSS/JS frontend
+- Docker containerized for Render
 
-## Folder structure
+## Project Structure
 
-- `youtube_downloader.py` - main downloader script
-- `requirements.txt` - Python dependency list
-- `README.md` - project instructions
-- `.vscode/tasks.json` - VS Code run task
-- `.github/copilot-instructions.md` - workspace Copilot instructions
+```
+.
+├── frontend/
+│   └── index.html          # Main website UI
+├── backend/
+│   └── main.py             # FastAPI backend
+├── Dockerfile              # Docker build instructions
+├── .dockerignore           # Docker ignore file
+├── requirements.txt        # Python dependencies
+├── render.yaml             # Render deployment config
+└── README.md               # This file
+```
 
-## Setup instructions for Windows
+## Local Development
 
-1. Open this folder in VS Code.
-2. Make sure Python 3.8 or newer is installed.
-3. In VS Code, select the Python interpreter for your environment.
-4. Open a terminal in VS Code.
-5. Run:
+### Prerequisites
 
-   ```powershell
-   python -m pip install -r requirements.txt
+- Docker installed
+- Git
+
+### Run Locally
+
+1. Clone this repo:
+   ```bash
+   git clone <your-repo-url>
+   cd youtube-downloader
    ```
 
-6. The script will also attempt to verify `ffmpeg`.
-
-## Run instructions
-
-1. Open `youtube_downloader.py` in VS Code.
-2. Run the script from the terminal:
-
-   ```powershell
-   python youtube_downloader.py
+2. Build and run with Docker:
+   ```bash
+   docker build -t yt-downloader .
+   docker run -p 8000:8000 yt-downloader
    ```
 
-3. When prompted, paste a YouTube video or playlist URL.
-4. Wait while the downloader saves the file(s) to your `Youtube` folder.
+3. Open browser to `http://localhost:8000`
 
-## VS Code task
+## Deploy to Render
 
-Use the task to run the script quickly:
+### Step 1: Prepare GitHub Repository
 
-- Open the Command Palette and select `Tasks: Run Task`
-- Choose `Run YouTube Downloader`
+1. Create a new GitHub repository
+2. Push this code to the repo:
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git remote add origin https://github.com/yourusername/youtube-downloader.git
+   git push -u origin main
+   ```
+
+### Step 2: Create Render Web Service
+
+1. Go to [Render Dashboard](https://dashboard.render.com)
+2. Click "New" → "Web Service"
+3. Connect your GitHub repository
+4. Configure the service:
+   - **Name**: youtube-downloader (or your choice)
+   - **Runtime**: Docker
+   - **Region**: Any (e.g., Oregon)
+   - **Plan**: Free
+   - **Dockerfile Path**: `./Dockerfile` (should auto-detect)
+   - **Environment Variables**:
+     - `PORT`: `8000`
+5. Click "Create Web Service"
+
+### Step 3: Deploy
+
+1. Render will automatically build and deploy your Docker container
+2. Wait for the build to complete (may take 5-10 minutes)
+3. Once deployed, you'll get a public URL like `https://youtube-downloader.onrender.com`
+
+### Step 4: Test
+
+1. Open the public URL in your browser
+2. Paste a YouTube URL and click "Download"
+3. Monitor real progress
+4. Download the file when complete
+
+## Render Free Tier Limitations
+
+- **Cold Starts**: First request after inactivity may take 30-60 seconds
+- **Storage**: Files are temporary (auto-deleted after 1 hour)
+- **CPU/RAM**: Limited resources, may timeout on large downloads
+- **Requests**: Rate limited, avoid rapid successive downloads
+
+## API Endpoints
+
+- `POST /download` - Start download, returns `task_id`
+- `GET /status/{task_id}` - Get download progress
+- `GET /files/{filename}` - Download completed file
+- `GET /` - Serve frontend
 
 ## Troubleshooting
 
-### `ffmpeg` missing
+### Build Fails
+- Check Docker logs in Render dashboard
+- Ensure all files are committed to Git
 
-- The script checks whether `ffmpeg` is available on your PATH.
-- If it cannot find it automatically, install `ffmpeg` on Windows and add it to your PATH.
-- After installing, restart VS Code or the terminal.
+### Downloads Fail
+- Check if URL is valid YouTube link
+- Private/restricted videos won't work
+- Large files may timeout on free tier
 
-### Invalid URL
+### CORS Issues
+- Frontend and backend are served from same domain on Render
 
-- Confirm the pasted URL is a valid YouTube video or playlist link.
-- Example video URL: `https://www.youtube.com/watch?v=...`
-- Example playlist URL: `https://www.youtube.com/playlist?list=...`
+## Security Notes
 
-### Video or playlist unavailable
+- No authentication required
+- Files auto-delete after 1 hour
+- Basic rate limiting via task tracking
+- Only processes YouTube URLs
 
-- The video or playlist may have been removed, set to private, or blocked.
-- Only download content you own or have permission to download.
+## License
 
-### Network errors
-
-- Check your internet connection.
-- Retry if the download fails due to a temporary issue.
-
-### `yt-dlp` installation problems
-
-- If auto-install fails, run:
-
-  ```powershell
-  python -m pip install -r requirements.txt
-  ```
-
-- If the package is still missing, verify your Python interpreter and PATH.
-
-## Notes
-
-- This project does not use third-party download websites.
-- It does not bypass DRM, paywalls, login restrictions, age restrictions, or copyright protections.
-- Use this only for videos you own, have permission to download, or are legally allowed to download.
-
+MIT License

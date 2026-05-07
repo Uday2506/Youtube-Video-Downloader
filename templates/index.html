@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YTGrab — Free YouTube Downloader</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g0:#f0faf2;
+  --g1:#e4f5e8;
+  --g2:#c8ecce;
+  --g3:#a3ddb0;
+  --g4:#5fc478;
+  --g5:#2ea84b;
+  --g6:#1a7a33;
+  --white:#ffffff;
+  --text:#0f2318;
+  --text2:#2d5a3d;
+  --text3:#4a7a5a;
+  --text4:#7aaa8a;
+  --glass:rgba(255,255,255,0.55);
+  --glass2:rgba(255,255,255,0.75);
+  --shadow:rgba(46,168,75,0.18);
+  --shadow2:rgba(15,35,24,0.10);
+  --r:16px;
+  --r2:24px;
+  --font:'Plus Jakarta Sans',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);
+  background:var(--g0);
+  color:var(--text);
+  overflow-x:hidden;
+  min-height:100vh;
+}
+#bg-canvas{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  z-index:0;pointer-events:none;
+  opacity:0.85;
+}
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1rem 3.5rem;
+  background:rgba(240,250,242,0.80);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(163,221,176,0.4);
+  transition:all 0.3s;
+}
+.nav-logo{
+  font-size:1.35rem;font-weight:800;color:var(--text);
+  letter-spacing:-0.5px;display:flex;align-items:center;gap:8px;
+}
+.logo-icon{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--g4),var(--g5));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 12px var(--shadow);
+}
+.logo-icon svg{width:18px;height:18px;fill:white}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{
+  font-size:0.875rem;font-weight:600;color:var(--text3);
+  text-decoration:none;transition:color 0.2s;
+}
+.nav-links a:hover{color:var(--g5)}
+.nav-btn{
+  background:linear-gradient(135deg,var(--g4),var(--g5));
+  color:white;border:none;padding:0.6rem 1.5rem;
+  border-radius:50px;font-family:var(--font);
+  font-size:0.85rem;font-weight:700;cursor:pointer;
+  box-shadow:0 4px 16px var(--shadow);
+  transition:transform 0.2s,box-shadow 0.2s;
+  text-decoration:none;display:inline-block;
+}
+.nav-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px var(--shadow)}
+.nav-btn:active{transform:scale(0.97)}
+.hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8rem 2rem 5rem;
+  position:relative;z-index:10;
+  text-align:center;
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--glass2);border:1px solid var(--g3);
+  color:var(--g5);padding:6px 18px;border-radius:50px;
+  font-size:0.78rem;font-weight:700;letter-spacing:0.06em;
+  text-transform:uppercase;margin-bottom:2rem;
+  box-shadow:0 2px 12px var(--shadow);
+  animation:floatIn 0.8s ease both;
+}
+.tag-dot{width:8px;height:8px;border-radius:50%;background:var(--g4);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.hero-title{
+  font-size:clamp(2.8rem,6.5vw,6rem);
+  font-weight:800;line-height:1.0;
+  letter-spacing:-2px;
+  color:var(--text);
+  margin-bottom:1.5rem;
+  animation:floatIn 0.8s 0.1s ease both;
+}
+.hero-title .green{color:var(--g5)}
+.hero-title .light{color:var(--g4)}
+.hero-sub{
+  font-size:1.05rem;color:var(--text3);
+  max-width:480px;line-height:1.8;
+  font-weight:400;
+  margin-bottom:3rem;
+  animation:floatIn 0.8s 0.2s ease both;
+}
+.dl-box{
+  width:100%;max-width:660px;
+  background:var(--glass2);
+  border:1.5px solid rgba(163,221,176,0.6);
+  border-radius:var(--r2);
+  padding:2rem;
+  box-shadow:
+    0 8px 32px var(--shadow2),
+    0 0 0 1px rgba(255,255,255,0.8) inset,
+    0 1px 0 rgba(255,255,255,0.9) inset;
+  backdrop-filter:blur(24px);
+  animation:floatIn 0.8s 0.3s ease both;
+  position:relative;
+  overflow:hidden;
+}
+.dl-box::before{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:160px;height:160px;border-radius:50%;
+  background:radial-gradient(circle,rgba(95,196,120,0.2),transparent 70%);
+  pointer-events:none;
+}
+.dl-row{
+  display:flex;align-items:center;gap:0;
+  background:white;
+  border:1.5px solid var(--g2);
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 2px 8px var(--shadow2);
+  transition:border-color 0.3s,box-shadow 0.3s;
+}
+.dl-row:focus-within{
+  border-color:var(--g4);
+  box-shadow:0 0 0 4px rgba(95,196,120,0.15),0 2px 8px var(--shadow2);
+}
+.dl-icon{
+  display:flex;align-items:center;padding:0 1rem;
+  color:var(--g4);flex-shrink:0;
+}
+.dl-icon svg{width:22px;height:22px}
+.dl-input{
+  flex:1;border:none;outline:none;
+  font-family:var(--font);font-size:0.95rem;
+  color:var(--text);padding:1rem 0;
+  background:transparent;
+}
+.dl-input::placeholder{color:var(--text4)}
+.dl-submit{
+  background:linear-gradient(135deg,var(--g4),var(--g5));
+  color:white;border:none;
+  padding:0 1.75rem;
+  font-family:var(--font);font-size:0.9rem;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;gap:8px;
+  transition:filter 0.2s;white-space:nowrap;
+  border-radius:0 12px 12px 0;
+}
+.dl-submit:hover{filter:brightness(1.08)}
+.dl-submit svg{width:16px;height:16px}
+.dl-options{
+  display:flex;gap:1rem;margin-top:1.25rem;flex-wrap:wrap;
+}
+.opt-pill{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(95,196,120,0.12);
+  border:1px solid rgba(95,196,120,0.3);
+  color:var(--g6);border-radius:50px;
+  padding:5px 14px;font-size:0.78rem;font-weight:600;cursor:pointer;
+  transition:all 0.2s;user-select:none;
+}
+.opt-pill:hover,.opt-pill.active{
+  background:var(--g4);color:white;border-color:var(--g4);
+  box-shadow:0 4px 12px var(--shadow);
+}
+.opt-pill svg{width:13px;height:13px}
+.progress-card{
+  display:none;margin-top:1.25rem;
+  background:rgba(95,196,120,0.08);
+  border:1px solid rgba(95,196,120,0.25);
+  border-radius:12px;padding:1rem 1.25rem;
+}
+.progress-card.show{display:block}
+.prog-label{font-size:0.82rem;font-weight:600;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between}
+.prog-bar-bg{height:6px;background:var(--g2);border-radius:50px;overflow:hidden}
+.prog-bar-fill{height:100%;border-radius:50px;background:linear-gradient(90deg,var(--g4),var(--g5));width:0%;transition:width 0.4s ease}
+.card-row-section{
+  position:relative;z-index:10;
+  padding:0 2rem 5rem;
+  display:flex;justify-content:center;
+}
+.card-row{
+  display:flex;gap:1.25rem;max-width:840px;width:100%;flex-wrap:wrap;justify-content:center;
+}
+.stat-card{
+  flex:1;min-width:160px;
+  background:var(--glass2);
+  border:1px solid rgba(163,221,176,0.5);
+  border-radius:var(--r2);
+  padding:1.5rem 1.25rem;
+  text-align:center;
+  box-shadow:0 8px 24px var(--shadow2),0 1px 0 rgba(255,255,255,0.9) inset;
+  backdrop-filter:blur(20px);
+  transition:transform 0.3s,box-shadow 0.3s;
+  cursor:default;
+  transform-style:preserve-3d;
+}
+.stat-card:hover{
+  transform:translateY(-8px) rotateX(4deg);
+  box-shadow:0 20px 48px var(--shadow),0 1px 0 rgba(255,255,255,0.9) inset;
+}
+.stat-num{font-size:2.25rem;font-weight:800;color:var(--g5);letter-spacing:-1px;line-height:1}
+.stat-label{font-size:0.75rem;color:var(--text3);font-weight:500;margin-top:6px;letter-spacing:0.02em}
+.features-section{
+  position:relative;z-index:10;
+  padding:4rem 2rem 6rem;
+}
+.section-center{text-align:center;margin-bottom:3rem}
+.section-tag{
+  display:inline-block;
+  background:rgba(95,196,120,0.15);color:var(--g5);
+  border-radius:50px;padding:5px 16px;
+  font-size:0.75rem;font-weight:700;letter-spacing:0.08em;
+  text-transform:uppercase;margin-bottom:1rem;
+}
+.section-title{
+  font-size:clamp(1.8rem,3.5vw,2.8rem);
+  font-weight:800;letter-spacing:-1.2px;
+  color:var(--text);margin-bottom:0.75rem;
+}
+.section-sub{font-size:0.95rem;color:var(--text3);max-width:460px;margin:0 auto;line-height:1.75}
+.feat-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1.25rem;max-width:1040px;margin:0 auto;
+}
+.feat-card{
+  background:var(--glass2);
+  border:1px solid rgba(163,221,176,0.45);
+  border-radius:var(--r2);
+  padding:1.75rem;
+  box-shadow:0 4px 20px var(--shadow2),0 1px 0 rgba(255,255,255,0.9) inset;
+  backdrop-filter:blur(20px);
+  transition:transform 0.35s cubic-bezier(.22,.68,0,1.2),box-shadow 0.35s;
+  cursor:default;
+  position:relative;overflow:hidden;
+}
+.feat-card::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--g3),var(--g4),var(--g3));
+  opacity:0;transition:opacity 0.3s;
+}
+.feat-card:hover{
+  transform:translateY(-10px) scale(1.01);
+  box-shadow:0 24px 56px var(--shadow),0 1px 0 rgba(255,255,255,0.9) inset;
+}
+.feat-card:hover::after{opacity:1}
+.feat-ico{
+  width:48px;height:48px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(95,196,120,0.15),rgba(46,168,75,0.2));
+  border:1px solid rgba(95,196,120,0.3);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:1.25rem;color:var(--g5);
+}
+.feat-ico svg{width:24px;height:24px}
+.feat-title{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:0.5rem;letter-spacing:-0.2px}
+.feat-desc{font-size:0.85rem;color:var(--text3);line-height:1.75;font-weight:400}
+.how-section{
+  position:relative;z-index:10;
+  padding:2rem 2rem 6rem;
+}
+.how-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1.5rem;max-width:900px;margin:3rem auto 0;
+}
+.how-card{
+  background:var(--glass2);
+  border:1px solid rgba(163,221,176,0.4);
+  border-radius:var(--r2);
+  padding:2rem 1.5rem;
+  text-align:center;
+  box-shadow:0 4px 20px var(--shadow2),0 1px 0 rgba(255,255,255,0.8) inset;
+  backdrop-filter:blur(20px);
+  transition:transform 0.3s,box-shadow 0.3s;
+  position:relative;
+}
+.how-card:hover{transform:translateY(-8px);box-shadow:0 20px 44px var(--shadow)}
+.how-num{
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,var(--g3),var(--g4));
+  color:white;font-size:1.2rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 1.25rem;
+  box-shadow:0 6px 20px var(--shadow);
+}
+.how-title{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:0.5rem}
+.how-desc{font-size:0.84rem;color:var(--text3);line-height:1.75}
+.how-connector{
+  position:absolute;top:50%;right:-0.75rem;
+  width:1.5rem;height:2px;
+  background:linear-gradient(90deg,var(--g3),var(--g4));
+  z-index:1;transform:translateY(-50%);
+}
+.formats-section{
+  position:relative;z-index:10;
+  padding:2rem 2rem 6rem;
+  text-align:center;
+}
+.fmt-grid{
+  display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;
+  max-width:700px;margin:2.5rem auto 0;
+}
+.fmt-card{
+  background:var(--glass2);border:1.5px solid rgba(163,221,176,0.5);
+  border-radius:var(--r);padding:1rem 1.5rem;
+  box-shadow:0 4px 16px var(--shadow2),0 1px 0 rgba(255,255,255,0.9) inset;
+  backdrop-filter:blur(16px);
+  transition:transform 0.25s,box-shadow 0.25s;
+  cursor:default;min-width:130px;
+}
+.fmt-card:hover{transform:translateY(-6px) rotateX(5deg);box-shadow:0 16px 36px var(--shadow)}
+.fmt-name{font-size:1.3rem;font-weight:800;color:var(--g5);letter-spacing:-0.5px}
+.fmt-desc{font-size:0.75rem;color:var(--text3);margin-top:3px;font-weight:500}
+.cta-section{
+  position:relative;z-index:10;
+  padding:4rem 2rem 8rem;
+  text-align:center;
+}
+.cta-box{
+  max-width:700px;margin:0 auto;
+  background:linear-gradient(135deg,var(--g4),var(--g5),var(--g6));
+  border-radius:28px;
+  padding:4rem 3rem;
+  box-shadow:0 24px 64px rgba(46,168,75,0.4),0 0 0 1px rgba(255,255,255,0.15) inset;
+  position:relative;overflow:hidden;
+}
+.cta-box::before{
+  content:'';position:absolute;top:-80px;left:-80px;
+  width:300px;height:300px;border-radius:50%;
+  background:rgba(255,255,255,0.08);pointer-events:none;
+}
+.cta-box::after{
+  content:'';position:absolute;bottom:-60px;right:-60px;
+  width:220px;height:220px;border-radius:50%;
+  background:rgba(255,255,255,0.06);pointer-events:none;
+}
+.cta-title{font-size:2.2rem;font-weight:800;color:white;letter-spacing:-1px;margin-bottom:0.75rem}
+.cta-sub{font-size:0.95rem;color:rgba(255,255,255,0.75);margin-bottom:2rem;line-height:1.7}
+.cta-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;position:relative;z-index:1}
+.btn-white{
+  background:white;color:var(--g5);
+  border:none;padding:0.85rem 2rem;border-radius:50px;
+  font-family:var(--font);font-size:0.9rem;font-weight:700;
+  cursor:pointer;text-decoration:none;
+  box-shadow:0 4px 20px rgba(0,0,0,0.15);
+  transition:transform 0.2s,box-shadow 0.2s;display:inline-flex;align-items:center;gap:8px;
+}
+.btn-white:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,0.2)}
+.btn-ghost{
+  background:rgba(255,255,255,0.15);color:white;
+  border:1.5px solid rgba(255,255,255,0.4);
+  padding:0.85rem 2rem;border-radius:50px;
+  font-family:var(--font);font-size:0.9rem;font-weight:700;
+  cursor:pointer;text-decoration:none;
+  transition:background 0.2s,transform 0.2s;display:inline-flex;align-items:center;gap:8px;
+}
+.btn-ghost:hover{background:rgba(255,255,255,0.25);transform:translateY(-3px)}
+footer{
+  position:relative;z-index:10;
+  background:rgba(228,245,232,0.7);
+  border-top:1px solid rgba(163,221,176,0.4);
+  padding:2.5rem 3.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:1rem;
+  backdrop-filter:blur(20px);
+}
+.footer-logo{font-size:1.1rem;font-weight:800;color:var(--text);letter-spacing:-0.3px}
+.footer-note{font-size:0.78rem;color:var(--text4)}
+.footer-links{display:flex;gap:1.5rem}
+.footer-links a{font-size:0.78rem;color:var(--text3);text-decoration:none;font-weight:500;transition:color 0.2s}
+.footer-links a:hover{color:var(--g5)}
+@keyframes floatIn{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+.scroll-reveal{opacity:0;transform:translateY(32px);transition:opacity 0.7s ease,transform 0.7s ease}
+.scroll-reveal.visible{opacity:1;transform:translateY(0)}
+.toast{
+  position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--g5);color:white;padding:0.75rem 1.75rem;
+  border-radius:50px;font-size:0.875rem;font-weight:600;
+  box-shadow:0 8px 32px var(--shadow);
+  opacity:0;transition:all 0.4s;z-index:9999;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:900px){
+  .feat-grid,.how-grid{grid-template-columns:1fr 1fr}
+  nav{padding:1rem 1.5rem}
+  .nav-links{display:none}
+  .hero{padding:7rem 1.5rem 4rem}
+  footer{padding:2rem 1.5rem}
+}
+@media(max-width:560px){
+  .feat-grid,.how-grid{grid-template-columns:1fr}
+  .stat-card{min-width:130px}
+  .how-connector{display:none}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="toast" id="toast">Requires Python 3.8+ — Run locally!</div>
+<nav id="nav">
+  <div class="nav-logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+    </div>
+    YTGrab
+  </div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#formats">Formats</a></li>
+    <li><a href="#github">GitHub</a></li>
+  </ul>
+  <a href="/downloads" class="nav-btn">Downloads</a>
+  <a href="https://github.com/Uday2506/Youtube-Video-Downloader" class="nav-btn" target="_blank">⭐ Star on GitHub</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-tag">
+    <span class="tag-dot"></span>
+    100% Free & Open Source
+  </div>
+  <h1 class="hero-title">
+    Download YouTube<br>Videos <span class="green">in Seconds</span>
+  </h1>
+  <p class="hero-sub">
+    Paste any YouTube video or playlist URL and get the highest quality MP4 — powered by yt-dlp. No ads, no limits, no sign-up.
+  </p>
+
+  <div class="dl-box" id="dl-box">
+    <div class="dl-row" id="dl-row">
+      <span class="dl-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input class="dl-input" id="dl-input" type="text" placeholder="Paste YouTube video or playlist URL…" />
+      <button class="dl-submit" type="button" onclick="handleDL()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </button>
+    </div>
+    <div class="dl-options">
+      <div class="opt-pill active" onclick="selectOpt(this,'Best Quality MP4')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Best Quality
+      </div>
+      <div class="opt-pill" onclick="selectOpt(this,'1080p Full HD')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        1080p HD
+      </div>
+      <div class="opt-pill" onclick="selectOpt(this,'4K Ultra HD')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        4K UHD
+      </div>
+      <div class="opt-pill" onclick="selectOpt(this,'Full Playlist')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Playlist
+      </div>
+      <div class="opt-pill" onclick="selectOpt(this,'Audio Only MP3')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        Audio Only
+      </div>
+    </div>
+    <div class="progress-card" id="prog-card">
+      <div class="prog-label"><span id="prog-text">Analyzing URL…</span><span id="prog-pct">0%</span></div>
+      <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-fill"></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="card-row-section">
+  <div class="card-row">
+    <div class="stat-card scroll-reveal">
+      <div class="stat-num">4K</div>
+      <div class="stat-label">Max Resolution</div>
+    </div>
+    <div class="stat-card scroll-reveal" style="transition-delay:0.08s">
+      <div class="stat-num">∞</div>
+      <div class="stat-label">Playlist Videos</div>
+    </div>
+    <div class="stat-card scroll-reveal" style="transition-delay:0.16s">
+      <div class="stat-num">MP4</div>
+      <div class="stat-label">Output Format</div>
+    </div>
+    <div class="stat-card scroll-reveal" style="transition-delay:0.24s">
+      <div class="stat-num">$0</div>
+      <div class="stat-label">Forever Free</div>
+    </div>
+    <div class="stat-card scroll-reveal" style="transition-delay:0.32s">
+      <div class="stat-num">3.8+</div>
+      <div class="stat-label">Python Version</div>
+    </div>
+  </div>
+</div>
+
+<section class="features-section" id="features">
+  <div class="section-center scroll-reveal">
+    <div class="section-tag">Features</div>
+    <h2 class="section-title">Everything You Need.</h2>
+    <p class="section-sub">No browser extensions, no shady websites. A clean Python script that just works.</p>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-card scroll-reveal">
+      <div class="feat-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      </div>
+      <div class="feat-title">Highest Quality Always</div>
+      <div class="feat-desc">Automatically picks the best video and audio streams and merges them into a single clean MP4 using ffmpeg.</div>
+    </div>
+    <div class="feat-card scroll-reveal" style="transition-delay:0.08s">
+      <div class="feat-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </div>
+      <div class="feat-title">Full Playlist Support</div>
+      <div class="feat-desc">Download entire playlists at once. Videos are numbered in playlist order and saved in a named subfolder.</div>
+    </div>
+    <div class="feat-card scroll-reveal" style="transition-delay:0.16s">
+      <div class="feat-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="feat-title">Pre-flight Checks</div>
+      <div class="feat-desc">Verifies yt-dlp and ffmpeg are installed before running — no silent failures, no mystery errors.</div>
+    </div>
+    <div class="feat-card scroll-reveal" style="transition-delay:0.24s">
+      <div class="feat-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </div>
+      <div class="feat-title">Zero Config Python</div>
+      <div class="feat-desc">Python 3.8+, one requirements.txt, one script. Run it, paste a URL, done. VS Code task included.</div>
+    </div>
+    <div class="feat-card scroll-reveal" style="transition-delay:0.32s">
+      <div class="feat-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </div>
+      <div class="feat-title">Organized Output</div>
+      <div class="feat-desc">All files go to your ~/Youtube folder. Playlists get their own named subfolder, numbered correctly.</div>
+    </div>
+    <div class="feat-card scroll-reveal" style="transition-delay:0.4s">
+      <div class="feat-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div class="feat-title">Clear Error Messages</div>
+      <div class="feat-desc">Invalid URLs, missing ffmpeg, private videos — every failure gives you a plain English explanation.</div>
+    </div>
+  </div>
+</section>
+
+<section class="how-section" id="how">
+  <div class="section-center scroll-reveal">
+    <div class="section-tag">How It Works</div>
+    <h2 class="section-title">Three Steps. Done.</h2>
+    <p class="section-sub">From zero to downloaded video in under two minutes.</p>
+  </div>
+  <div class="how-grid">
+    <div class="how-card scroll-reveal">
+      <div class="how-num">1</div>
+      <div class="how-title">Clone & Install</div>
+      <div class="how-desc">Clone the repo and run <code style="background:rgba(95,196,120,0.15);padding:1px 6px;border-radius:4px;font-size:0.82em;color:var(--g5)">pip install -r requirements.txt</code>. That's the only dependency.</div>
+      <div class="how-connector"></div>
+    </div>
+    <div class="how-card scroll-reveal" style="transition-delay:0.1s">
+      <div class="how-num">2</div>
+      <div class="how-title">Run the Script</div>
+      <div class="how-desc">Launch with <code style="background:rgba(95,196,120,0.15);padding:1px 6px;border-radius:4px;font-size:0.82em;color:var(--g5)">python youtube_downloader.py</code> from terminal or VS Code task runner.</div>
+      <div class="how-connector"></div>
+    </div>
+    <div class="how-card scroll-reveal" style="transition-delay:0.2s">
+      <div class="how-num">3</div>
+      <div class="how-title">Paste & Download</div>
+      <div class="how-desc">Paste any YouTube URL when prompted. The script picks the best quality, merges streams, and saves your file.</div>
+    </div>
+  </div>
+</section>
+
+<section class="formats-section" id="formats">
+  <div class="section-center scroll-reveal">
+    <div class="section-tag">Formats & Quality</div>
+    <h2 class="section-title">What Can You Get?</h2>
+    <p class="section-sub">yt-dlp fetches the absolute best streams available on YouTube for any given video.</p>
+  </div>
+  <div class="fmt-grid">
+    <div class="fmt-card scroll-reveal">
+      <div class="fmt-name">4K</div>
+      <div class="fmt-desc">2160p Ultra HD</div>
+    </div>
+    <div class="fmt-card scroll-reveal" style="transition-delay:0.06s">
+      <div class="fmt-name">1080p</div>
+      <div class="fmt-desc">Full HD</div>
+    </div>
+    <div class="fmt-card scroll-reveal" style="transition-delay:0.12s">
+      <div class="fmt-name">720p</div>
+      <div class="fmt-desc">HD Ready</div>
+    </div>
+    <div class="fmt-card scroll-reveal" style="transition-delay:0.18s">
+      <div class="fmt-name">MP4</div>
+      <div class="fmt-desc">Output Format</div>
+    </div>
+    <div class="fmt-card scroll-reveal" style="transition-delay:0.24s">
+      <div class="fmt-name">AAC</div>
+      <div class="fmt-desc">High Quality Audio</div>
+    </div>
+    <div class="fmt-card scroll-reveal" style="transition-delay:0.30s">
+      <div class="fmt-name">∞</div>
+      <div class="fmt-desc">Playlist Size</div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section" id="github">
+  <div class="cta-box scroll-reveal">
+    <div class="cta-title">Star It on GitHub</div>
+    <div class="cta-sub">Free forever. Open source. Built by Uday2506.<br>No sign-ups, no tracking, no ads — just a script that works.</div>
+    <div class="cta-btns">
+      <a href="https://github.com/Uday2506/Youtube-Video-Downloader" class="btn-white" target="_blank">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        View on GitHub
+      </a>
+      <a href="https://github.com/Uday2506/Youtube-Video-Downloader/archive/refs/heads/main.zip" class="btn-ghost" target="_blank">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download ZIP
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">YTGrab <span style="color:var(--g4)">·</span> by Uday2506</div>
+  <div class="footer-links">
+    <a href="https://github.com/Uday2506/Youtube-Video-Downloader" target="_blank">GitHub</a>
+    <a href="https://github.com/Uday2506/Youtube-Video-Downloader/blob/main/README.md" target="_blank">Docs</a>
+    <a href="https://github.com/yt-dlp/yt-dlp" target="_blank">yt-dlp</a>
+    <a href="https://ffmpeg.org" target="_blank">ffmpeg</a>
+  </div>
+  <div class="footer-note">Only download content you own or have permission to download. MIT License.</div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const toast = document.getElementById('toast');
+let selectedOption = 'Best Quality MP4';
+
+const canvas = document.getElementById('bg-canvas');
+const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 200);
+camera.position.set(0, 0, 18);
+
+const objects = [];
+const geo = [
+  new THREE.IcosahedronGeometry(1, 0),
+  new THREE.OctahedronGeometry(0.9, 0),
+  new THREE.TetrahedronGeometry(1.0, 0),
+  new THREE.BoxGeometry(1.2, 1.2, 1.2),
+  new THREE.SphereGeometry(0.8, 8, 8),
+];
+
+const colors = [0x5fc478, 0x2ea84b, 0xa3ddb0, 0x1a7a33, 0x8ed9a0, 0xc8ecce, 0x3db55e];
+
+for(let i=0;i<28;i++){
+  const g = geo[Math.floor(Math.random()*geo.length)].clone();
+  const mat = new THREE.MeshPhongMaterial({
+    color: colors[Math.floor(Math.random()*colors.length)],
+    transparent:true,
+    opacity: 0.12 + Math.random()*0.18,
+    shininess: 80,
+    wireframe: Math.random()>0.55,
+  });
+  const mesh = new THREE.Mesh(g, mat);
+
+  const spread = 26;
+  mesh.position.set(
+    (Math.random()-0.5)*spread,
+    (Math.random()-0.5)*spread*0.9,
+    (Math.random()-0.5)*10 - 4
+  );
+  const s = 0.4 + Math.random()*1.4;
+  mesh.scale.set(s,s,s);
+  mesh.rotation.set(Math.random()*6, Math.random()*6, Math.random()*6);
+
+  mesh.userData = {
+    rotX: (Math.random()-0.5)*0.008,
+    rotY: (Math.random()-0.5)*0.010,
+    rotZ: (Math.random()-0.5)*0.006,
+    floatSpeed: 0.3 + Math.random()*0.5,
+    floatAmp: 0.3 + Math.random()*0.5,
+    initY: mesh.position.y,
+    phase: Math.random()*Math.PI*2,
+  };
+
+  scene.add(mesh);
+  objects.push(mesh);
+}
+
+const ambientLight = new THREE.AmbientLight(0x9fefb8, 1.2);
+scene.add(ambientLight);
+const dirLight = new THREE.DirectionalLight(0x5fc478, 1.8);
+dirLight.position.set(5, 10, 8);
+scene.add(dirLight);
+const pointLight = new THREE.PointLight(0x2ea84b, 2.0, 60);
+pointLight.position.set(-8, 6, 6);
+scene.add(pointLight);
+
+let mouse = {x:0, y:0};
+document.addEventListener('mousemove', e=>{
+  mouse.x = (e.clientX/window.innerWidth - 0.5)*2;
+  mouse.y = (e.clientY/window.innerHeight - 0.5)*2;
+});
+
+let t=0;
+function animate(){
+  requestAnimationFrame(animate);
+  t += 0.01;
+  camera.position.x += (mouse.x * 1.5 - camera.position.x) * 0.04;
+  camera.position.y += (-mouse.y * 1.2 - camera.position.y) * 0.04;
+  camera.lookAt(scene.position);
+  objects.forEach(obj=>{
+    obj.rotation.x += obj.userData.rotX;
+    obj.rotation.y += obj.userData.rotY;
+    obj.rotation.z += obj.userData.rotZ;
+    obj.position.y = obj.userData.initY + Math.sin(t*obj.userData.floatSpeed + obj.userData.phase)*obj.userData.floatAmp;
+  });
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize',()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add('visible'); }
+  });
+},{threshold:0.12});
+document.querySelectorAll('.scroll-reveal').forEach(el=>observer.observe(el));
+
+document.querySelectorAll('.feat-card,.stat-card,.fmt-card,.how-card').forEach(card=>{
+  card.addEventListener('mousemove', e=>{
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left)/r.width - 0.5;
+    const y = (e.clientY - r.top)/r.height - 0.5;
+    card.style.transform = `perspective(600px) rotateX(${-y*10}deg) rotateY(${x*10}deg) translateY(-8px) scale(1.02)`;
+  });
+  card.addEventListener('mouseleave',()=>{
+    card.style.transform = '';
+    card.style.transition = 'transform 0.5s cubic-bezier(.22,.68,0,1.2)';
+    setTimeout(()=>card.style.transition='',500);
+  });
+});
+
+const dlBox = document.getElementById('dl-box');
+dlBox.addEventListener('mousemove',e=>{
+  const r = dlBox.getBoundingClientRect();
+  const x = (e.clientX - r.left)/r.width - 0.5;
+  const y = (e.clientY - r.top)/r.height - 0.5;
+  dlBox.style.transform = `perspective(900px) rotateX(${-y*6}deg) rotateY(${x*6}deg)`;
+});
+dlBox.addEventListener('mouseleave',()=>{
+  dlBox.style.transform = '';
+  dlBox.style.transition = 'transform 0.6s ease';
+  setTimeout(()=>dlBox.style.transition='',600);
+});
+
+function selectOpt(el, name){
+  document.querySelectorAll('.opt-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  selectedOption = name;
+}
+
+let progressInterval = null;
+async function handleDL(){
+  const input = document.getElementById('dl-input');
+  const url = input.value.trim();
+  if(!url){
+    input.style.animation='shake 0.4s ease';
+    setTimeout(()=>input.style.animation='',400);
+    showToast('Please paste a valid YouTube URL.', 'error');
+    return;
+  }
+
+  const prog = document.getElementById('prog-card');
+  const fill = document.getElementById('prog-fill');
+  const txt  = document.getElementById('prog-text');
+  const pct  = document.getElementById('prog-pct');
+  prog.classList.add('show');
+
+  const steps = [
+    [0,'Analyzing URL…'],
+    [20,'Fetching video metadata…'],
+    [45,'Selecting best streams…'],
+    [70,'Merging video + audio…'],
+    [90,'Saving to local folder…']
+  ];
+
+  let i = 0;
+  progressInterval = setInterval(()=>{
+    if(i >= steps.length) return;
+    fill.style.width = steps[i][0] + '%';
+    txt.textContent = steps[i][1];
+    pct.textContent = steps[i][0] + '%';
+    i++;
+  }, 550);
+
+  try {
+    const response = await fetch('/api/download', {
+      method: 'POST',
+      headers:{
+        'Accept':'application/json',
+        'Content-Type':'application/json'
+      },
+      body: JSON.stringify({url, mode: selectedOption})
+    });
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(text || 'Invalid JSON response from server');
+    }
+
+    if (!response.ok || !data.success) throw new Error(data.error || 'Download failed');
+
+    fill.style.width = '100%';
+    txt.textContent = 'Download complete';
+    pct.textContent = '100%';
+    showToast(data.message || 'Download completed successfully');
+  } catch(error) {
+    fill.style.width = '0%';
+    txt.textContent = 'Error';
+    pct.textContent = '0%';
+    showToast(error.message || 'Download failed', 'error');
+  } finally {
+    clearInterval(progressInterval);
+    progressInterval = null;
+    setTimeout(()=>prog.classList.remove('show'), 3200);
+  }
+}
+
+function showToast(message, type='success'){
+  toast.textContent = message;
+  toast.style.background = type === 'error' ? '#d23f3f' : 'var(--g5)';
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),4000);
+}
+
+window.addEventListener('scroll',()=>{
+  document.getElementById('nav').style.boxShadow =
+    window.scrollY>30 ? '0 4px 24px rgba(46,168,75,0.12)' : '';
+});
+
+const style = document.createElement('style');
+style.textContent = `
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-5px)}
+  80%{transform:translateX(5px)}
+}`;
+document.head.appendChild(style);
+</script>
+</body>
+</html>

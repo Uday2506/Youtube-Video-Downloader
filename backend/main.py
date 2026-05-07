@@ -77,7 +77,7 @@ async def download_video(url: str, mode: str, task_id: str):
         # yt-dlp options with aggressive YouTube bypass
         ydl_opts = {
             'outtmpl': str(DOWNLOAD_DIR / '%(title)s.%(ext)s'),
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best',
+            'format': 'bestvideo+bestaudio/best',
             'merge_output_format': 'mp4',
             'noplaylist': False,
             'quiet': True,
@@ -101,11 +101,12 @@ async def download_video(url: str, mode: str, task_id: str):
             'retry_sleep': 5,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['web', 'ios'],
-                    'player_skip': ['js'],
+                    'player_client': ['web', 'ios', 'android', 'mweb'],
+                    'skip': ['hls'],
                 }
             },
             'http_chunk_size': 10485760,
+            'allow_unplayable_formats': True,
         }
 
         if mode == "audio":

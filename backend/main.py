@@ -83,6 +83,17 @@ async def download_video(url: str, mode: str, task_id: str):
             'quiet': True,
             'no_warnings': True,
             'progress_hooks': [lambda d: update_progress(d, task_id)],
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Upgrade-Insecure-Requests': '1',
+            },
+            'socket_timeout': 30,
+            'extractor_args': {'youtube': {'player_client': ['web']}},
         }
 
         if mode == "audio":
@@ -137,7 +148,9 @@ async def start_download(request: DownloadRequest, background_tasks: BackgroundT
 async def get_status(task_id: str):
     if task_id not in tasks:
         raise HTTPException(status_code=404, detail="Task not found")
-    return TaskStatus(**tasks[task_id])
+    task_data = tasks[task_id].copy()
+    task_data["task_id"] = task_id
+    return TaskStatus(**task_data)
 
 @app.get("/files/{filename}")
 async def get_file(filename: str):

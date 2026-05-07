@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 import yt_dlp
@@ -13,6 +14,13 @@ import time
 from urllib.parse import urlparse
 
 app = FastAPI(title="YouTube Downloader API")
+
+# Serve the frontend UI
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
+
+@app.get("/")
+async def read_index():
+    return FileResponse("frontend/index.html")
 
 # CORS
 app.add_middleware(

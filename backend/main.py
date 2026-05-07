@@ -15,12 +15,18 @@ from urllib.parse import urlparse
 
 app = FastAPI(title="YouTube Downloader API")
 
+# Get the directory where this file is located
+BASE_DIR = Path(__file__).parent.parent
+
 # Serve the frontend UI
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
+frontend_dir = BASE_DIR / "frontend"
+app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
 
 @app.get("/")
 async def read_index():
-    return FileResponse("frontend/index.html")
+    index_file = BASE_DIR / "frontend" / "index.html"
+    return FileResponse(path=str(index_file), media_type="text/html")
+
 
 # CORS
 app.add_middleware(
